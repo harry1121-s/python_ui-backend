@@ -1,9 +1,10 @@
 import serial 
+import time
 from serial.tools import list_ports
 VID = ["10C4", "00"]
 PID = ["EA60", "00"]
 port = ["Device-1", 'Device-2']
-class DAC_Control:
+class ADC_READ:
     def __init__(self, BAUD):
         self.BAUD = BAUD
         device_list = list_ports.comports()
@@ -20,27 +21,31 @@ class DAC_Control:
                 else:
                     port[0] = None
                     port[1] = None
-
-    def dacWrite(self, deviceID, dacID, value):
-#         Frame Format: FF00 + dacID(8bits) + data + AAFF
-        frame = str(dacID) + str(value)
-        device = serial.Serial(port[deviceID], baudrate = self.BAUD)
-
-        if device.in_waiting:
-            try:
-                data = device.readLine()
-                print(data)
-            except:
-                print("COM PORT Error!")
-                quit()
-
-        byte = device.write(frame.encode())
-        print(byte, " bytes written to COM PORT")
-        readBack = device.readline()
-        print(readBack)
-        device.close()
-        return 1 if byte>1 else 0
-
-    def getAvailableDevices(self):
-        return port
     
+    def adcRead(self, deviceID, adcID):
+        device = serial.Serial(port[deviceID], baudrate = self.BAUD)
+        x = 0
+        f = open('/Users/harryrpo1/Desktop/SPD-ENV/spd_UI/logger-data/logger.txt', 'a', encoding = 'utf-8')
+        y = 0
+        while(1):
+            try:
+                if(y == 0):
+                    byte = device.write(str(255).encode())
+                    y = 1
+                input_frame = device.readline()
+                decoded_bytes = float(input_frame[0:len(input_frame)-2].decode("utf-8"))
+                print(decoded_bytes)
+                # f.write(decoded_bytes)
+                x = x+1
+                if(x==200):
+                    x = 0
+                    time.sleep(0.01)
+                    byte = device.write(str(255).encode())
+                    continue
+            except:
+                f.close()
+                print("Keyboard Interrupt")
+                break
+        
+
+            
